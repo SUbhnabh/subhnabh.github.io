@@ -39,26 +39,20 @@
         <h1>Contact</h1>
         <p>Available for professional penetration testing engagements</p>
 
-        <!-- Web3Forms Integration -->
-        <form class="contact-form" action="https://api.web3forms.com/submit" method="POST">
-            <!-- Replace YOUR_ACCESS_KEY_HERE with your actual key from web3forms.com -->
+        <form class="contact-form" action="https://api.web3forms.com/submit" method="POST" id="contactForm">
             <input type="hidden" name="access_key" value="8353674e-7bbd-482f-a002-c60dd3821072">
-
-            <!-- Optional: Custom subject line -->
             <input type="hidden" name="subject" value="New Contact Message from Portfolio">
 
-            <!-- Optional: Redirect to a thank you page after submission (create thanks.html if you want) -->
-            <!-- <input type="hidden" name="redirect" value="thanks.html"> -->
-
-            <!-- Honeypot spam protection (hidden checkbox bots might tick) -->
+            <!-- Honeypot -->
             <input type="checkbox" name="botcheck" class="hidden" style="display:none">
 
-            <input type="text" name="name" placeholder="Name" required>
+            <input type="text" name="name" id="name" placeholder="Name" required minlength="2" maxlength="50">
             <input type="email" name="email" placeholder="Email" required>
-            <textarea name="message" placeholder="Message" rows="6" required></textarea>
+            <textarea name="message" id="message" placeholder="Message" rows="6" required minlength="10" maxlength="2000"></textarea>
 
             <button type="submit">Send Message</button>
         </form>
+
         <p>Primary Email: sudhamshubn00@gmail.com</p>
         <p>Email: sudhamshu.bn@gmail.com</p>
         <p>LinkedIn: <a href="https://linkedin.com/in/sudhamshu-b-n-760bb7171/" target="_blank">linkedin.com/in/sudhamshu-b-n-760bb7171/</a></p>
@@ -69,5 +63,52 @@
     </footer>
 
     <script src="script.js"></script>
+
+    <!-- Modern XSS Protection using DOMPurify (Industry Standard) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+    <script>
+        // Clean and safe configuration
+        const PURIFY_CONFIG = {
+            ALLOWED_TAGS: [],                  // Strip all HTML tags
+            ALLOWED_ATTR: [],                  // No attributes allowed
+            KEEP_CONTENT: true,                // Keep text content
+            ADD_TAGS: [],                      // No extra tags
+            ADD_ATTR: [],
+            FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'style'],
+            SAFE_FOR_TEMPLATES: true
+        };
+
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            const nameField = document.getElementById('name');
+            const messageField = document.getElementById('message');
+
+            // Sanitize Name: Only allow letters, spaces, hyphens, apostrophes, periods
+            const cleanName = nameField.value
+                .replace(/[^a-zA-Z\s\-\'\.]/g, '')
+                .trim()
+                .substring(0, 50);
+
+            if (cleanName.length < 2) {
+                alert('Please enter a valid name (letters and basic punctuation only).');
+                e.preventDefault();
+                return;
+            }
+            nameField.value = cleanName;
+
+            // Sanitize Message using DOMPurify (neutralizes ALL known XSS vectors)
+            const dirtyMessage = messageField.value;
+            const cleanMessage = DOMPurify.sanitize(dirtyMessage, PURIFY_CONFIG);
+
+            // Additional safety: block if sanitization removed too much (likely malicious)
+            if (cleanMessage.length < dirtyMessage.length * 0.7) {
+                alert('Your message contains invalid or unsafe content. Please use plain text only.');
+                e.preventDefault();
+                return;
+            }
+
+            // Limit excessive newlines
+            messageField.value = cleanMessage.replace(/\n{5,}/g, '\n\n\n\n').trim();
+        });
+    </script>
 </body>
 </html>
